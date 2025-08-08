@@ -4,7 +4,7 @@
   // Firebase dynamic imports (so failures don't block the UI)
   let db = null;
   let analytics = null;
-  let getFirestore, collection, getDocs, addDoc, query, where, orderBy, serverTimestamp;
+  let getFirestore, collection, getDocs, addDoc, query, where, serverTimestamp; // removed orderBy
 
   try {
     const [{ initializeApp }, { getAnalytics }, firestore] = await Promise.all([
@@ -13,7 +13,7 @@
       import("https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js"),
     ]);
 
-    ({ getFirestore, collection, getDocs, addDoc, query, where, orderBy, serverTimestamp } = firestore);
+    ({ getFirestore, collection, getDocs, addDoc, query, where, serverTimestamp } = firestore);
 
     const firebaseConfig = {
       apiKey: "AIzaSyCmixDrT_zPWu-tON6jbI_f-fIuNxv-H50",
@@ -119,32 +119,40 @@
   }
 
   async function getPlaceSubmissions(placeId) {
-    if (!db || !collection || !getDocs || !query || !where || !orderBy) {
+    if (!db || !collection || !getDocs || !query || !where) {
       return localSubmissions.filter((s) => s.placeId === placeId);
     }
-    const col = collection(db, "submissions");
-    const qy = query(col, where("placeId", "==", placeId), orderBy("createdAt", "desc"));
-    const snap = await getDocs(qy);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    try {
+      const col = collection(db, "submissions");
+      const qy = query(col, where("placeId", "==", placeId));
+      const snap = await getDocs(qy);
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.error("[HowCrouded] Failed to fetch submissions:", e);
+      // fallback to any local entries we might have cached
+      return localSubmissions.filter((s) => s.placeId === placeId);
+    }
   }
 
   async function computeAggregateLevel(placeId) {
     const items = await getPlaceSubmissions(placeId);
-    if (items.length === 0) return null;
+    // Merge with local submissions in case write fell back locally
+    const merged = items.concat(localSubmissions.filter((s) => s.placeId === placeId));
+    if (merged.length === 0) return null;
 
     const counts = { Low: 0, Medium: 0, High: 0 };
-    items.forEach((s) => { counts[s.level] = (counts[s.level] || 0) + 1; });
+    merged.forEach((s) => { counts[s.level] = (counts[s.level] || 0) + 1; });
 
     const maxCount = Math.max(counts.Low, counts.Medium, counts.High);
     const topLevels = ["Low", "Medium", "High"].filter((lvl) => counts[lvl] === maxCount);
 
     if (topLevels.length === 1) {
-      return { level: topLevels[0], total: items.length };
+      return { level: topLevels[0], total: merged.length };
     }
 
     // Tie-break by most recent among tied levels
     const latestByLevel = {};
-    items.forEach((s) => {
+    merged.forEach((s) => {
       const ts = s.createdAt?.toMillis ? s.createdAt.toMillis() : s.timestampMs || 0;
       if (!latestByLevel[s.level] || latestByLevel[s.level] < ts) {
         latestByLevel[s.level] = ts;
@@ -158,7 +166,7 @@
       if (ts > latestTs) { chosen = lvl; latestTs = ts; }
     }
 
-    return { level: chosen, total: items.length };
+    return { level: chosen, total: merged.length };
   }
 
   function resetPanels() {
