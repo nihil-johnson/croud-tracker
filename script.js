@@ -60,6 +60,11 @@
   let selectedPlace = null; // { id, name }
   let placesCache = []; // [{id, name}]
 
+  function coercePlaceName(data, idFallback) {
+    const candidate = data?.name ?? data?.Name ?? data?.title ?? data?.place ?? idFallback;
+    return typeof candidate === "string" ? candidate : String(candidate || idFallback || "");
+  }
+
   async function loadPlaces() {
     if (!db) {
       // Local fallback to two places
@@ -72,10 +77,10 @@
 
     try {
       const snap = await getDocs(collection(db, "places"));
-      placesCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      placesCache = placesCache
-        .filter((p) => typeof p.name === "string" && p.name.trim().length > 0)
-        .map((p) => ({ id: p.id, name: p.name }));
+      placesCache = snap.docs.map((d) => {
+        const name = coercePlaceName(d.data(), d.id);
+        return { id: d.id, name };
+      }).filter((p) => p.name && p.name.trim().length > 0);
     } catch (e) {
       console.error("[HowCrouded] Failed to fetch places; using local fallback.", e);
       placesCache = [
