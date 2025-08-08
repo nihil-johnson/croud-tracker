@@ -72,6 +72,7 @@
         { id: "thiruthani", name: "Thiruthani Temple" },
         { id: "santhome", name: "Santhome Church" },
       ];
+      console.log(`[HowCrouded] Loaded ${placesCache.length} places (local fallback)`);
       return placesCache;
     }
 
@@ -81,6 +82,7 @@
         const name = coercePlaceName(d.data(), d.id);
         return { id: d.id, name };
       }).filter((p) => p.name && p.name.trim().length > 0);
+      console.log(`[HowCrouded] Loaded ${placesCache.length} places from Firestore`);
     } catch (e) {
       console.error("[HowCrouded] Failed to fetch places; using local fallback.", e);
       placesCache = [
@@ -94,7 +96,7 @@
 
   function filterPlacesPrefix(query) {
     const q = (query || "").trim().toLowerCase();
-    if (!q) return [];
+    if (!q) return placesCache.slice(); // show all when empty
     return placesCache.filter((p) => p.name.toLowerCase().startsWith(q));
   }
 
@@ -269,8 +271,13 @@
     suggestions.innerHTML = "";
     suggestions.classList.remove("active");
 
-    // Ensure places loaded before user types
-    loadPlaces().catch((e) => console.error("[HowCrouded] loadPlaces failed", e));
+    // Load places and populate suggestions for current query once loaded
+    loadPlaces()
+      .then(() => {
+        const items = filterPlacesPrefix(searchInput.value);
+        renderSuggestions(items);
+      })
+      .catch((e) => console.error("[HowCrouded] loadPlaces failed", e));
 
     searchInput.focus();
   }
@@ -313,5 +320,5 @@
   });
 
   // Initial: preload places quietly (non-blocking)
-  loadPlaces().catch(() => {});
+  loadPlaces().then(() => console.log("[HowCrouded] Preloaded places")).catch(() => {});
 })();
