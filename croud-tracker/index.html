@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HowCrouded</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <header class="topbar" aria-label="Brand">
+      <div class="brand" title="HowCrouded">HowCrouded</div>
+    </header>
+
+    <main class="container">
+      <header class="header">
+        <h1>Data displayed are live and updated in real time</h1>
+        <p class="sub">Choose to view or submit croud levels for places.</p>
+      </header>
+
+      <section class="mode-actions" aria-label="Actions">
+        <article class="option-card option-view" tabindex="0" role="button" aria-pressed="false">
+          <h2>View croud</h2>
+          <p class="muted">See the current croud level based on user submissions.</p>
+        </article>
+        <article class="option-card option-submit" tabindex="0" role="button" aria-pressed="false">
+          <h2>Submit croud</h2>
+          <p class="muted">Share the current croud level to help others plan.</p>
+        </article>
+      </section>
+
+      <section class="search-section" aria-hidden="true">
+        <label class="search-label" for="place-search">Search place</label>
+        <input id="place-search" class="search-input" type="text" placeholder="Type to search (e.g., T for Thiruthani)" autocomplete="off" />
+        <ul class="suggestions" role="listbox" aria-label="Matching places"></ul>
+      </section>
+
+      <section class="panels">
+        <div class="view-panel" aria-hidden="true">
+          <h3 class="panel-title">View result</h3>
+          <p class="no-data">There is no enough data to show croud</p>
+          <div class="has-data" hidden>
+            <p class="current">Current croud level: <span class="level-chip" data-level=""></span></p>
+            <p class="based-on"></p>
+          </div>
+        </div>
+
+        <div class="submit-panel" aria-hidden="true">
+          <h3 class="panel-title">Submit your observation</h3>
+          <p class="warning">Please be responsible while sumbitting data, your submission may affect other people plans</p>
+          <div class="actions">
+            <button class="level level-low" data-level="Low" type="button" aria-label="Submit Low crowd">Low</button>
+            <button class="level level-medium" data-level="Medium" type="button" aria-label="Submit Medium crowd">Medium</button>
+            <button class="level level-high" data-level="High" type="button" aria-label="Submit High crowd">High</button>
+          </div>
+        </div>
+
+        <p class="thanks" role="status" aria-live="polite">Thank you for your submission!</p>
+      </section>
+
+      <footer class="footer">
+        <small>As a initial release, only some places are supported. More places will be added in future. Thanks for Understanding!!</small>
+      </footer>
+    </main>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
